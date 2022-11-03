@@ -1,0 +1,17 @@
+{
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "dev": "nodemon ./src/index.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^8.3.0",
+    "@fastify/passport": "^2.2.0",
+    "@fastify/session": "^10.0.2",
+    "dotenv": "^16.0.3",
+    "easy-no-password": "^1.2.2",
+    "fastify": "^4.9.2",
+    "nodemon": "^2.0.20",
+    "passport": "^0.6.0"
+  }
+}
