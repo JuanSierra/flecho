@@ -5,22 +5,28 @@ const fastifyCookie = require('@fastify/cookie');
 const fastifySession = require('@fastify/session');
 const env = require('dotenv');
 const EasyNoPassword = require("easy-no-password");
+const fastifyCors = require('@fastify/cors');
+const Email = require('email-templates');
 env.config();
 
 const Port = process.env.PORT;
-const uri = process.env.MONGODB_URI;
+const uri = process.env.SERVER_URI;
 const _secret = process.env.SECRET;
+const mailtrap_user = process.env.MAILTRAP_USER;
+const mailtrap_pass = process.env.MAILTRAP_PASS;
 
 const app = fastify({ logger: true });
+
+app.register(fastifyCors, { origin: '*' });
 //const fastifyPassport = new Authenticator();
 
-// Passport configuration~
-/*app.register(fastifyCookie);
+// Passport configuration
+//app.register(fastifyCookie);
+/*
 app.register(fastifySession, { secret: 'secret with minimum length of 32 characters' })
 app.register(fastifyPassport.initialize())
 app.register(fastifyPassport.secureSession())
 */
-
 
 fastifyPassport.use('easy', new EasyNoPassword.Strategy({
     secret: _secret
@@ -38,14 +44,43 @@ function (req) {
 },
 function (email, token, done) {
     var safeEmail = encodeURIComponent(email);
-    var url = "http://localhost:5000/auth/tok?email=" + safeEmail + "&token=" + token;
-    console.log(url)
-    done();
+    var url = uri+":"+Port+"/auth/tok?email=" + safeEmail + "&token=" + token;
+    
+    const emailSrv = new Email({
+        message: {
+          from: 'hi@example.com'
+        },
+        send: true,
+        transport: {
+          host: 'smtp.mailtrap.io',
+          port: 2525,
+          ssl: false,
+          tls: true,
+          auth: {
+            user: mailtrap_user, // your Mailtrap username
+            pass: mailtrap_pass //your Mailtrap password
+          }
+        }
+       });
+
+       let data = {email: email, link: url, application: "Web app" };
+
+       emailSrv
+       .send({
+         template: 'token',
+         message: {
+           to: 'test@example.com'
+         },
+         locals: data
+       })
+       .then(console.log)
+       .then(() => done())
+       .catch(console.error);
     // Send the link to user via email.  Call done() when finished.
 },
 function (email, done) {
     console.log("here")
-    // User is authenticated!  Call your findOrCreateUser function here.
+    // User is authenticated!  Call findOrCreateUser function here.
 }));
 
 app.after(() => {
