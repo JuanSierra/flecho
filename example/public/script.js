@@ -1,5 +1,4 @@
 class FlechoClient {
-
     constructor(server, app){
         this.server = server;
         this.app = app;

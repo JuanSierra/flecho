@@ -1,2 +1,14 @@
-h1 Hello, your email #{email} was registered
-    p A token was generated, click the button below and start using your account. #{link} Confirm!
+table(align='left' border='0' cellpadding='0' cellspacing='0' style='max-width: 100%; min-width: 100%;' width='100%')
+  tbody
+    tr
+      td(valign='top' style="font-family: 'Helvetica Neue', Helvetica, Arial, Verdana, sans-serif; padding: 0px 18px 9px;")
+        div
+          | Hi,
+          br
+          br
+          | A token was generated, click the button below and start using your account.
+          br
+          br
+          a(href=`${link}`) Click here
+          |  to complete the process.
+          br
