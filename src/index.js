@@ -57,8 +57,8 @@ function (email, token, done) {
           ssl: false,
           tls: true,
           auth: {
-            user: mailtrap_user, // your Mailtrap username
-            pass: mailtrap_pass //your Mailtrap password
+            user: mailtrap_user,
+            pass: mailtrap_pass
           }
         }
        });
@@ -88,8 +88,14 @@ app.after(() => {
       method: 'POST',
       url: '/auth/tok',
       preValidation: fastifyPassport.authenticate("easy",  { authInfo: false }),
-      handler: async (req, reply, err, user, info, status) => {
-        return { hello: 'world' }
+      handler: async (request, reply, err) => {
+        if (err !== null) {
+          console.warn(err)
+        } else {
+          reply
+          .code(200)
+          .send();
+        }
       }
     })
 
@@ -97,10 +103,20 @@ app.after(() => {
         method: 'GET',
         url: '/auth/tok',
         preValidation: fastifyPassport.authenticate("easy", {
-            successRedirect: "/",
             failureRedirect: "/oops.html"
         }),
-        handler: async (req, reply) => () => {}
+        handler: async (request, reply, err, user, info, status) => {
+          if (err !== null) {
+            console.warn(err)
+          } else if (user) {
+            console.log(`Hello ${user.name}!`)
+          }
+
+          reply
+          .code(200)
+          .header('Content-Type', 'application/json; charset=utf-8')
+          .send(user);
+        }
       })
   })
 
