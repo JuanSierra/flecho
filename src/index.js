@@ -1,127 +1,110 @@
-
 const fastify = require('fastify');
-const  fastifyPassport = require('passport');
+const env = require('dotenv');
+
+const { Authenticator } = require( '@fastify/passport')
 const fastifyCookie = require('@fastify/cookie');
 const fastifySession = require('@fastify/session');
-const env = require('dotenv');
-const EasyNoPassword = require("easy-no-password");
 const fastifyCors = require('@fastify/cors');
-const Email = require('email-templates');
+const EasyNoPassword = require("easy-no-password");
+
+const {sendMail} = require('./lib/email');
+
 env.config();
 
 const Port = process.env.PORT;
-const uri = process.env.SERVER_URI;
+const app_uri = process.env.SERVER_URI;
 const _secret = process.env.SECRET;
-const mailtrap_user = process.env.MAILTRAP_USER;
-const mailtrap_pass = process.env.MAILTRAP_PASS;
 
 const app = fastify({ logger: true });
 
-app.register(fastifyCors, { origin: '*' });
-//const fastifyPassport = new Authenticator();
+app.register(fastifyCors, { origin: 'http://localhost:8080', credentials: 'credentials' });
+const fastifyPassport = new Authenticator();
 
-// Passport configuration
-//app.register(fastifyCookie);
-/*
+app.register(fastifyCookie, {
+  secret: "the-secret", // for cookies signature
+});
+
 app.register(fastifySession, { secret: 'secret with minimum length of 32 characters' })
 app.register(fastifyPassport.initialize())
 app.register(fastifyPassport.secureSession())
-*/
 
 fastifyPassport.use('easy', new EasyNoPassword.Strategy({
     secret: _secret
 },
 function (req) {
-    
+    console.log("coming")
+    console.log(req.cookies)
+
     // Check if we are in "stage 1" (requesting a token) or "stage 2" (verifying a token)
     if (req.body && req.body.email) {
         return { stage: 1, username: req.body.email };
     } else if (req.query && req.query.email && req.query.token) {
         return { stage: 2, username: req.query.email, token: req.query.token };
+    } else if (req.cookies && req.cookies.token) {
+        const bCookie = req.unsignCookie(req.cookies.token);
+        console.log("with cookie");
+        console.log(bCookie);
+        let val = JSON.parse(bCookie.value);
+        return { stage: 2, username: val.email, token: val.token };
     } else {
         return null;
     }
 },
+
 function (email, token, done) {
-    var safeEmail = encodeURIComponent(email);
-    var url = uri+":"+Port+"/auth/tok?email=" + safeEmail + "&token=" + token;
-    
-    const emailSrv = new Email({
-        message: {
-          from: 'hi@example.com'
-        },
-        send: true,
-        transport: {
-          host: 'smtp.mailtrap.io',
-          port: 2525,
-          ssl: false,
-          tls: true,
-          auth: {
-            user: mailtrap_user,
-            pass: mailtrap_pass
-          }
-        }
-       });
+  var safeEmail = encodeURIComponent(email);
+  var url = `${app_uri}:8080/login.html?email=${safeEmail}&token=${token}`; 
 
-       let data = {email: email, link: url, application: "Web app" };
-
-       emailSrv
-       .send({
-         template: 'token',
-         message: {
-           to: 'test@example.com'
-         },
-         locals: data
-       })
-       .then(console.log)
-       .then(() => done())
-       .catch(console.error);
-    // Send the link to user via email.  Call done() when finished.
+  sendMail("Web app", email, url, done);
 },
-function (email, done) {
-    console.log("here")
-    // User is authenticated!  Call findOrCreateUser function here.
+
+function (email, verified) {
+    console.log("User is authenticated")
+	  verified(null, email, {user:"thing"});
 }));
 
-app.after(() => {
-    app.route({
-      method: 'POST',
-      url: '/auth/tok',
-      preValidation: fastifyPassport.authenticate("easy",  { authInfo: false }),
-      handler: async (request, reply, err) => {
-        if (err !== null) {
-          console.warn(err)
-        } else {
-          reply
-          .code(200)
-          .send();
-        }
-      }
-    })
+app.post(
+ '/auth/tok',
+ { preValidation: fastifyPassport.authenticate("easy",  { authInfo: false }) },
+ async (request, reply, err) => {
+	if (err !== null) {
+	  console.warn(err)
+	} else {
+	  reply
+	  .code(200)
+	  .send();
+	}}
+)
 
-    app.route({
-        method: 'GET',
-        url: '/auth/tok',
-        preValidation: fastifyPassport.authenticate("easy", {
-            failureRedirect: "/oops.html"
-        }),
-        handler: async (request, reply, err, user, info, status) => {
-          if (err !== null) {
-            console.warn(err)
-          } else if (user) {
-            console.log(`Hello ${user.name}!`)
-          }
-
-          reply
-          .code(200)
-          .header('Content-Type', 'application/json; charset=utf-8')
-          .send(user);
-        }
-      })
+app.get(
+ '/auth/tok',
+ { preValidation: fastifyPassport.authenticate("easy", {
+      failureRedirect: "/oops.html",
+			session: false
+ })},
+ async (request, reply, err, user, info, status) => {
+		if (err !== null) {
+			console.warn(err)
+		} else if (user) {
+			console.log(`Hello ${user.name}!`)
+		}
+           
+	console.log("Create Token")
+  let t = {email: request.query.email, token: request.query.token};
+  
+  console.log(t)
+  
+	reply
+  .setCookie('token', JSON.stringify(t), {
+    signed: true,
+    path: "/"
   })
+	.code(200)
+	.header('Content-Type', 'application/json; charset=utf-8')
+	.send();
+  }
+)
 
-
-// create server
 const start = async () => {
     try {
         await app.listen(Port);
@@ -130,4 +113,5 @@ const start = async () => {
         process.exit(1);
     }
 };
+
 start();
