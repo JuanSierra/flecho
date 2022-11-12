@@ -86,22 +86,23 @@ app.get(
 		if (err !== null) {
 			console.warn(err)
 		} else if (user) {
-			console.log(`Hello ${user.name}!`)
+			console.log(user)
 		}
            
 	console.log("Create Token")
   let t = {email: request.query.email, token: request.query.token};
   
-  console.log(t)
+  console.log({email: request.query.email})
   
 	reply
   .setCookie('token', JSON.stringify(t), {
     signed: true,
-    path: "/"
+    path: "/",
+    sameSite: "strict"
   })
 	.code(200)
 	.header('Content-Type', 'application/json; charset=utf-8')
-	.send();
+	.send({email: request.query.email})
   }
 )
 

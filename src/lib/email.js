@@ -8,7 +8,7 @@ const sendMail = (application, recipient, token_url, callback) => {
 
     const email = new Email({
         message: {
-            from: 'noreply@auth.com'
+            from: 'no-reply@auth.com'
         },
         send: true,
         transport: {
@@ -20,7 +20,8 @@ const sendMail = (application, recipient, token_url, callback) => {
                 user: mailtrap_user,
                 pass: mailtrap_pass
             }
-        }
+        },
+        openSimulator: false
     });
 
     let data = { email: email, link: token_url, application: application };

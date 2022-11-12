@@ -3,24 +3,19 @@ html, body{
     padding:0;
 }
 body{
-    width:450px;
-    height:300px;
-    padding-top:20px;
     font-size:16px;
     font-family:"Tahoma", sans-serif;
     line-height:1.3;
     background:#ff9500;
-    margin: 0 auto;
-
 }
 .login-form,
 .login-form input[type="text"],
-.login-form input[type="button"]{
+input[type="button"]{
     font-weight:bold;
     font-size:12px;
     font-family:"Tahoma", sans-serif;
     text-transform:uppercase;
-    margin-top:10px;
+    width: 100px;
 }
 .login-form input[type="checkbox"]{
     vertical-align:middle;
@@ -30,15 +25,22 @@ body{
     background-color: #ffffff;
     width: 300px;
     padding: 20px 40px 30px;
-            margin: 0 auto;
+    margin: 0 auto;
+    display:block;
 }
-.login-form input[type="text"],
-.login-form input[type="password"],
 .login-form input[type="button"] {
     display: block;
     border: 2px solid black;
+    width: 300px;
+        margin-top:10px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="button"] {
+    display: block;
+    border: 2px solid black;
     padding: 10px 15px;
-    padding-right: 40px;
 }
 h1 {
     margin: 0 0 15px 0;
@@ -50,17 +52,22 @@ h1 {
     background-position: 96% 50%;
     margin-bottom: 10px;
     text-transform: capitalize;
-    width: 240px;
+    width: 260px;
 }
-.login-form input[type="button"] {
+.login-form input[type="password"] {
+    background: #f9f6f3 url("https://htmlacademy.ru/assets/ifmo/icon-lock.png") no-repeat 270px 10px;
+    margin-bottom: 15px;   
+    text-transform: capitalize;
+    width: 250px;
+}
+input[type="button"] {
     background:black;
     color:white;
     border:none;
-    margin-top:15px;
     padding:15px;
-    width: 300px;
+    display:flex;
 }
-.login-form input[type="button"]:hover {
+input[type="button"]:hover {
     background:#282828;
     cursor: pointer;
 }
@@ -87,4 +94,35 @@ p{
     margin-bottom: 10px;
     text-transform: capitalize;
     width: 240px;
+}
+/* Main  */
+.brand-logo {
+  color: white;
+  order: 1;
+}
+.slim {
+  font-weight: 100;
+}
+.strong {
+  font-weight: 900;
+}
+nav{
+  min-height: 50px;
+  background-color: grey;
+  box-sizing: border-box;
+  display: flex;
+  box-shadow: 0 3px 6px #0005;
+  z-index: 3;
+  justify-content:space-between;
+  align-items:center;
+  padding:0.5em
+}
+.right-buttons{
+  display: flex;
+  flex-direction: row;
+  align-items:center;
+}
+.message {
+    width:300px;
+    margin:150px auto;
 }

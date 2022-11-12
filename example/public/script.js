@@ -1,27 +1,17 @@
-class FlechoClient {
-    constructor(server, app){
-        this.server = server;
-        this.app = app;
-    }
-
-    register(email){
-        fetch(this.server+"/auth/tok", {
-            method: "POST",
-            body: JSON.stringify({
-                email: email
-            }),
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            }
-        })
-        .then(response => response.json())
-        .then(json => console.log(json));
+function verifyLogin(){
+    let data = localStorage.getItem('user');
+    
+    if(!data)
+    {
+        window.location.href = "http://localhost:8080/login.html"
+    }else{
+        let login = document.getElementById("login")
+        let profile = document.getElementById("profile")
+        
+        login.classList.add("hide");
+        profile.classList.remove("hide");
+        profile.value = data;
     }
 }
 
-function sendRegistration(){
-    let login = document.getElementsByName('login')[0];
-    let client = new FlechoClient("http://localhost:5000", "example");
-
-    client.register(login.value);
-}
+window.onload = verifyLogin;
