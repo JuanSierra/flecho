@@ -126,3 +126,6 @@ nav{
     width:300px;
     margin:150px auto;
 }
+.hide{
+    display: none;
+}

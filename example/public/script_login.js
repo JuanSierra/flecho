@@ -30,7 +30,8 @@ class FlechoClient {
 }
 
 function doLogin(){
-    let params = window.location.search;
+    let url = new URL(window.location);
+    let params = new URLSearchParams(url.search);
 
     if(localStorage.getItem('user'))
         window.location.href = "http://localhost:8080/index.html"
@@ -41,25 +42,33 @@ function doLogin(){
 
         client.verify();
     */
-
-    fetch("http://localhost:5000/auth/tok" + params, {
-        method: "GET",
-        credentials: 'include'
-    })
-    .then((response) => {
-        if (response.status == 200) {
-            return response.json();
-        }
-        else
-        {
-            throw `error with status ${response.status}`;
-        }
-
-        /*fetch("http://localhost:5000/auth/tok", {
+    if(params.has('email')){
+        fetch("http://localhost:5000/auth/tok?" + params, {
             method: "GET",
             credentials: 'include'
-        })*/
-    }).then((json) => localStorage.setItem('user', json));
+        })
+        .then((response) => {
+            if (response.status == 200) {
+                /*let json = ;
+                console.log(json)
+*/
+                return response.json();
+            }
+            else
+            {
+                throw `error with status ${response.status}`;
+            }
+
+            /*fetch("http://localhost:5000/auth/tok", {
+                method: "GET",
+                credentials: 'include'
+            })*/
+        })
+        .then((data) => {
+            localStorage.setItem('user', data);  console.log(data)
+            window.location.href = "http://localhost:8080/index.html";
+        });
+    }
 }
 
 function sendRegistration(){
@@ -69,4 +78,4 @@ function sendRegistration(){
     client.register(login.value);
 }
 
-window.onload = doLogin; 
+window.onload = doLogin;
