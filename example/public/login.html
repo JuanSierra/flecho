@@ -12,11 +12,27 @@
   <h1>LOGIN</h1>
   <form id="form1" class="login-form">
       <h1>Register</h1>
-      <input type="text" name="login" placeholder="Email">
+      <input id="email" type="text" name="login" placeholder="Email">
       
       <a href="#">I need help</a>
       <br>
       <input type="button" value="Submit" onclick=sendRegistration()>
-  </form> 
+  </form>
+  <form id="form2" class="login-form normal hide" >
+    <h1 class="center">An email has been sent!</h1>
+    <p>
+    You're going to receive an email with your ✨<i>magic link</i> ✨to access.
+    </p>
+    <p>
+      If you have any problem opening the link, still can access with the token provided.
+    </p>
+    <a href="#" onclick=pass(2)>Input a token</a> 
+    <br>
+  </form>
+  <form id="form3" class="login-form hide" >
+    <h1>TOKEN</h1>
+    <input id="token" type="text" name="token">
+    <input type="button" value="Login" onclick=checkToken()>
+  </form>
 </body>
 </html>

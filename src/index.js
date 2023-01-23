@@ -42,8 +42,6 @@ function (req) {
         return { stage: 2, username: req.query.email, token: req.query.token };
     } else if (req.cookies && req.cookies.token) {
         const bCookie = req.unsignCookie(req.cookies.token);
-        console.log("with cookie");
-        console.log(bCookie);
         let val = JSON.parse(bCookie.value);
         return { stage: 2, username: val.email, token: val.token };
     } else {
@@ -89,21 +87,22 @@ app.get(
 			console.log(user)
 		}
            
-	console.log("Create Token")
-  let t = {email: request.query.email, token: request.query.token};
-  
-  console.log({email: request.query.email})
-  
-	reply
-  .setCookie('token', JSON.stringify(t), {
-    signed: true,
-    path: "/",
-    sameSite: "strict"
-  })
-	.code(200)
-	.header('Content-Type', 'application/json; charset=utf-8')
-	.send({email: request.query.email})
-  }
+    console.log("Create Token")
+    let t = {email: request.query.email, token: request.query.token};
+    
+    console.log({email: request.query.email})
+    
+    reply
+    .setCookie('token', JSON.stringify(t), {
+      signed: true,
+      path: "/",
+      sameSite: "none",
+      secure: true
+    })
+    .code(200)
+    .header('Content-Type', 'application/json; charset=utf-8')
+    .send({email: request.query.email})
+    }
 )
 
 const start = async () => {

@@ -4,8 +4,8 @@ class FlechoClient {
         this.app = app;
     }
 
-    register(email){
-        fetch(this.server+"/auth/tok", {
+    register(email, done){
+        fetch(this.server + "/auth/tok", {
             method: "POST",
             body: JSON.stringify({
                 email: email
@@ -14,18 +14,31 @@ class FlechoClient {
                 "Content-type": "application/json; charset=UTF-8"
             }
         })
-        .then(response => response.json())
-        .then(json => console.log(json));
+        .then(response => {
+            if (response.status == 200) {
+                done();
+            }else{
+                throw `error with status ${response.status}`;
+            }
+        });
     }
 
-    verify(){
-        fetch(this.server+"/auth/tok", {
-            method: "POST",
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
+    verify(email, token, callback){
+
+        fetch(this.server + "/auth/tok?email=" + email + "&token=" + token, {
+            method: "GET",
+            credentials: 'include'
+        })
+        .then((response) => {
+            if (response.status == 200) {
+                return response.json();
+            }else{
+                throw `error with status ${response.status}`;
             }
         })
-        .then(response => console.log(response));
+        .then((data) => {
+            callback(data);
+        });
     }
 }
 
@@ -36,46 +49,57 @@ function doLogin(){
     if(localStorage.getItem('user'))
         window.location.href = "http://localhost:8080/index.html"
 
-    /// if there is user then verify
-    /*
-        let client = new FlechoClient("http://localhost:5000", "example");
-
-        client.verify();
-    */
     if(params.has('email')){
+        let email = params.get('email');
+        let token = params.get('token');
+
+        client.verify(email, token, storeAndRedirect);
+        /*
         fetch("http://localhost:5000/auth/tok?" + params, {
             method: "GET",
             credentials: 'include'
         })
         .then((response) => {
             if (response.status == 200) {
-                /*let json = ;
-                console.log(json)
-*/
                 return response.json();
-            }
-            else
-            {
+            }else{
                 throw `error with status ${response.status}`;
             }
-
-            /*fetch("http://localhost:5000/auth/tok", {
-                method: "GET",
-                credentials: 'include'
-            })*/
         })
         .then((data) => {
-            localStorage.setItem('user', data);  console.log(data)
-            window.location.href = "http://localhost:8080/index.html";
+            localStorage.setItem('user', JSON.stringify(data));  
+            console.log(data)
+           // window.location.href = "http://localhost:8080/index.html";
         });
+        */
     }
 }
 
+let client = new FlechoClient("http://localhost:5000", "example");
+
 function sendRegistration(){
     let login = document.getElementsByName('login')[0];
-    let client = new FlechoClient("http://localhost:5000", "example");
 
-    client.register(login.value);
+    client.register(login.value, () => pass(1));
+}
+
+const $ = document.querySelector.bind(document);
+function pass(i) {
+  $('#form' + i).style.display = 'none'
+  $('#form' + (i + 1)).style.display = 'block'
+}
+
+function checkToken(){
+    let email = $('#email').value;
+    let token = $('#token').value;
+
+    client.verify(email, token, storeAndRedirect);
+}
+
+function storeAndRedirect(data){
+    localStorage.setItem('user', JSON.stringify(data));  
+    console.log(data);
+    window.location.href = "http://localhost:8080/index.html";
 }
 
 window.onload = doLogin;

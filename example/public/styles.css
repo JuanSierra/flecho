@@ -52,13 +52,13 @@ h1 {
     background-position: 96% 50%;
     margin-bottom: 10px;
     text-transform: capitalize;
-    width: 260px;
+    width: 267px;
 }
 .login-form input[type="password"] {
     background: #f9f6f3 url("https://htmlacademy.ru/assets/ifmo/icon-lock.png") no-repeat 270px 10px;
     margin-bottom: 15px;   
     text-transform: capitalize;
-    width: 250px;
+    width: 267px;
 }
 input[type="button"] {
     background:black;
@@ -93,7 +93,7 @@ p{
     background-position: 96% 50%;
     margin-bottom: 10px;
     text-transform: capitalize;
-    width: 240px;
+    width: 267px;
 }
 /* Main  */
 .brand-logo {
