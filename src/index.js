@@ -8,6 +8,8 @@ const fastifyCors = require('@fastify/cors');
 const EasyNoPassword = require("easy-no-password");
 
 const {sendMail} = require('./lib/email');
+const db = require('./lib/db');
+const DB = new db();
 
 env.config();
 
@@ -32,7 +34,6 @@ fastifyPassport.use('easy', new EasyNoPassword.Strategy({
     secret: _secret
 },
 function (req) {
-    console.log("coming")
     console.log(req.cookies)
 
     // Check if we are in "stage 1" (requesting a token) or "stage 2" (verifying a token)
@@ -57,10 +58,11 @@ function (email, token, done) {
 },
 
 function (email, verified) {
-    console.log("User is authenticated")
-	  verified(null, email, {user:"thing"});
+  console.log("User is authenticated")
+  verified(null, email, {user:"thing"});
 }));
 
+// Send to email
 app.post(
  '/auth/tok',
  { preValidation: fastifyPassport.authenticate("easy",  { authInfo: false }) },
@@ -74,6 +76,7 @@ app.post(
 	}}
 )
 
+// 
 app.get(
  '/auth/tok',
  { preValidation: fastifyPassport.authenticate("easy", {
@@ -86,12 +89,14 @@ app.get(
 		} else if (user) {
 			console.log(user)
 		}
-           
+
     console.log("Create Token")
     let t = {email: request.query.email, token: request.query.token};
     
     console.log({email: request.query.email})
-    
+
+    DB.add({id: null, logout: false, renewal:'20120506'});
+
     reply
     .setCookie('token', JSON.stringify(t), {
       signed: true,
@@ -107,6 +112,9 @@ app.get(
 
 const start = async () => {
     try {
+        // remove current sessions
+        DB.init();
+
         await app.listen(Port);
     } catch (err) {
         app.log.error(err);

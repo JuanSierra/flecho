@@ -13,6 +13,7 @@
     "easy-no-password": "^1.2.2",
     "email-templates": "^10.0.1",
     "fastify": "^4.9.2",
+    "lowdb": "^1.0.0",
     "nodemon": "^2.0.20",
     "passport": "^0.6.0",
     "pug": "^3.0.2"
