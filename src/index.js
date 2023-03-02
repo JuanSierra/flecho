@@ -31,11 +31,15 @@ app.register(fastifyPassport.initialize())
 app.register(fastifyPassport.secureSession())
 
 fastifyPassport.use('easy', new EasyNoPassword.Strategy({
-    secret: _secret
+    secret: _secret,
+    /*passReqToCallback: true*/
 },
 function (req) {
+    console.log('cook')
     console.log(req.cookies)
-
+  
+    console.log('req')  
+    console.log(req.body)
     // Check if we are in "stage 1" (requesting a token) or "stage 2" (verifying a token)
     if (req.body && req.body.email) {
         return { stage: 1, username: req.body.email };
@@ -57,8 +61,15 @@ function (email, token, done) {
   sendMail("Web app", email, url, done);
 },
 
-function (email, verified) {
-  console.log("User is authenticated")
+function (/*req,*/ email, verified) {
+
+  /*console.log("User is authenticated")*/
+
+  // User is authenticated!  Call create user function here.
+
+  var n = Date.now();
+  DB.add({id: null, logout: false, renewal: n.setDate(7)});
+
   verified(null, email, {user:"thing"});
 }));
 
@@ -76,7 +87,7 @@ app.post(
 	}}
 )
 
-// 
+// get token or refresh
 app.get(
  '/auth/tok',
  { preValidation: fastifyPassport.authenticate("easy", {
@@ -91,14 +102,21 @@ app.get(
 		}
 
     console.log("Create Token")
-    let t = {email: request.query.email, token: request.query.token};
+
+    var info = { email: '', token: '' };
+    if (request.query && request.query.email && request.query.token) {
+        info = { email: request.query.email, token: request.query.token };
+    } 
+    else if (request.cookies && request.cookies.token) 
+    {
+        const bCookie = request.unsignCookie(request.cookies.token);
+        let val = JSON.parse(bCookie.value);
+        info  = { email: val.email, token: val.token };
+    }
+    console.log(info)
     
-    console.log({email: request.query.email})
-
-    DB.add({id: null, logout: false, renewal:'20120506'});
-
     reply
-    .setCookie('token', JSON.stringify(t), {
+    .setCookie('token', JSON.stringify(info), {
       signed: true,
       path: "/",
       sameSite: "none",
@@ -106,8 +124,8 @@ app.get(
     })
     .code(200)
     .header('Content-Type', 'application/json; charset=utf-8')
-    .send({email: request.query.email})
-    }
+    .send({email:info.email})
+  }
 )
 
 const start = async () => {

@@ -41,7 +41,7 @@ class FlechoClient {
         });
     }
 
-    verify(callback){
+    refresh(callback){
 
         fetch(this.server + "/auth/tok", {
             method: "GET",

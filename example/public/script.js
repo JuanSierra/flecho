@@ -29,7 +29,7 @@ function verified(){
 function refreshToken(){
     let client = new FlechoClient("http://localhost:5000", "example");
 
-    client.verify(verified)
+    client.refresh(verified)
 }
 
 window.onload = verifyLogin;
