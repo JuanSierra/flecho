@@ -1,4 +1,5 @@
 import { FlechoClient } from "./flecho.js";
+const $ = document.querySelector.bind(document);
 
 function doLogin(){
     let url = new URL(window.location);
@@ -23,7 +24,6 @@ function sendRegistration(){
     client.register(login.value, () => pass(1));
 }
 
-const $ = document.querySelector.bind(document);
 function pass(i) {
   $('#form' + i).style.display = 'none'
   $('#form' + (i + 1)).style.display = 'block'

@@ -20,13 +20,21 @@ module.exports = class DB {
         this.#db.get('clients')
         .push(client)
         .write();
+
+        return client.id;
+    }
+
+    getById(id) {
+        var client = this.#db.get('clients').filter({ id: id }).value()
+
+        return client;
     }
 
     // property -> { renewal: '20120504'}
-    update(id, property){
+    update(id, property) {
         this.#db.get('clients')
             .find({ id: id })
             .assign(property)
-            .write()
+            .write();
     }
 }

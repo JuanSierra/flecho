@@ -32,7 +32,7 @@ app.register(fastifyPassport.secureSession())
 
 fastifyPassport.use('easy', new EasyNoPassword.Strategy({
     secret: _secret,
-    /*passReqToCallback: true*/
+    passReqToCallback: true
 },
 function (req) {
     console.log('cook')
@@ -61,16 +61,41 @@ function (email, token, done) {
   sendMail("Web app", email, url, done);
 },
 
-function (/*req,*/ email, verified) {
-
+function (request, email, verified) {
   /*console.log("User is authenticated")*/
 
   // User is authenticated!  Call create user function here.
 
-  var n = Date.now();
-  DB.add({id: null, logout: false, renewal: n.setDate(7)});
+  var info = { email: '', token: '' };
+  if (request.query && request.query.email && request.query.token) {
+      info = { email: request.query.email, token: request.query.token };
 
-  verified(null, email, {user:"thing"});
+      // create new user connection
+      info.id = DB.add({id: null, logout: false, renewal: Date.now()});
+
+      console.log('from auth')
+      console.log(info)
+
+      verified(null, email, info);
+  } 
+  else if (request.cookies && request.cookies.token) {
+      const bCookie = request.unsignCookie(request.cookies.token);
+      let val = JSON.parse(bCookie.value);
+      info  = { email: val.email, token: val.token };
+
+      var client = DB.getById(val.id);
+
+      if(client.logout)
+        verified("LOGOUT", email, info);
+
+      var enp = EasyNoPassword(_secret);
+      enp.createToken(info.email, (err, token) => {
+				if (err) return console.error(err);
+
+        info.token = token;
+        verified(null, email, info);
+      });
+  }
 }));
 
 // Send to email
@@ -95,36 +120,32 @@ app.get(
 			session: false
  })},
  async (request, reply, err, user, info, status) => {
-		if (err !== null) {
+		if (err !== undefined) {
+			console.log('err')
+
 			console.warn(err)
-		} else if (user) {
-			console.log(user)
-		}
+      
+      reply
+      .code(401)
+      .send(err);
 
-    console.log("Create Token")
+      return;
+		/*} else if (user) {
+			console.log(user)*/
+		} else {
+      console.log("Create Token")
 
-    var info = { email: '', token: '' };
-    if (request.query && request.query.email && request.query.token) {
-        info = { email: request.query.email, token: request.query.token };
-    } 
-    else if (request.cookies && request.cookies.token) 
-    {
-        const bCookie = request.unsignCookie(request.cookies.token);
-        let val = JSON.parse(bCookie.value);
-        info  = { email: val.email, token: val.token };
+      reply
+      .setCookie('token', JSON.stringify(request.authInfo), {
+        signed: true,
+        path: "/",
+        sameSite: "none",
+        secure: true
+      })
+      .code(200)
+      .header('Content-Type', 'application/json; charset=utf-8')
+      .send({email:request.authInfo.email})
     }
-    console.log(info)
-    
-    reply
-    .setCookie('token', JSON.stringify(info), {
-      signed: true,
-      path: "/",
-      sameSite: "none",
-      secure: true
-    })
-    .code(200)
-    .header('Content-Type', 'application/json; charset=utf-8')
-    .send({email:info.email})
   }
 )
 
