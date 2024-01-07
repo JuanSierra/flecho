@@ -19,6 +19,40 @@ const _secret = process.env.SECRET;
 
 const app = fastify({ logger: true });
 
+app.setErrorHandler(function (error, request, reply) {
+  console.log('general error handler', error.message)
+  console.log(request.cookies.token);
+  console.log(request)
+
+  // TODO: consider all cases
+  if (request.cookies && request.cookies.token)
+  {
+    const bCookie = request.unsignCookie(request.cookies.token);
+    let val = JSON.parse(bCookie.value);
+    info  = { email: val.email, token: val.token };
+  
+    var client = DB.getById(val.id);
+    var enp = EasyNoPassword(_secret);
+    enp.createToken(info.email, (err, token) => {
+      if (err) return console.error(err);
+  
+      info.token = token;
+      //verified(null, email, info);
+  
+      reply
+      .setCookie('token', JSON.stringify(info), {
+        signed: true,
+        path: "/",
+        sameSite: "none",
+        secure: true
+      })
+      .code(200)
+      .header('Content-Type', 'application/json; charset=utf-8')
+      .send({email:info.email})
+    });
+  }
+})
+
 app.register(fastifyCors, { origin: 'http://localhost:8080', credentials: 'credentials' });
 const fastifyPassport = new Authenticator();
 
@@ -32,14 +66,13 @@ app.register(fastifyPassport.secureSession())
 
 fastifyPassport.use('easy', new EasyNoPassword.Strategy({
     secret: _secret,
+    maxTokenAge: 10000,
     passReqToCallback: true
 },
 function (req) {
     console.log('cook')
     console.log(req.cookies)
   
-    console.log('req')  
-    console.log(req.body)
     // Check if we are in "stage 1" (requesting a token) or "stage 2" (verifying a token)
     if (req.body && req.body.email) {
         return { stage: 1, username: req.body.email };
@@ -48,8 +81,12 @@ function (req) {
     } else if (req.cookies && req.cookies.token) {
         const bCookie = req.unsignCookie(req.cookies.token);
         let val = JSON.parse(bCookie.value);
+        console.log('val')
+        console.log(val)
         return { stage: 2, username: val.email, token: val.token };
     } else {
+        // neither query nor cookie
+        console.log('null path')
         return null;
     }
 },
@@ -62,16 +99,14 @@ function (email, token, done) {
 },
 
 function (request, email, verified) {
-  /*console.log("User is authenticated")*/
-
   // User is authenticated!  Call create user function here.
 
-  var info = { email: '', token: '' };
+  var info = { code: '', email: '', token: '' };
   if (request.query && request.query.email && request.query.token) {
       info = { email: request.query.email, token: request.query.token };
 
       // create new user connection
-      info.id = DB.add({id: null, logout: false, renewal: Date.now()});
+      info.code = DB.add({id: null, logout: false, renewal: Date.now()});
 
       console.log('from auth')
       console.log(info)
@@ -81,8 +116,10 @@ function (request, email, verified) {
   else if (request.cookies && request.cookies.token) {
       const bCookie = request.unsignCookie(request.cookies.token);
       let val = JSON.parse(bCookie.value);
-      info  = { email: val.email, token: val.token };
+      info  = { email: val.email, token: val.token, code: val.code };
 
+      console.log('inff')
+      console.log(val)
       var client = DB.getById(val.id);
 
       if(client.logout)
@@ -95,6 +132,8 @@ function (request, email, verified) {
         info.token = token;
         verified(null, email, info);
       });
+  }else{
+    console.log('wrong')
   }
 }));
 
@@ -102,7 +141,7 @@ function (request, email, verified) {
 app.post(
  '/auth/tok',
  { preValidation: fastifyPassport.authenticate("easy",  { authInfo: false }) },
- async (request, reply, err) => {
+ (request, reply, err) => {
 	if (err !== null) {
 	  console.warn(err)
 	} else {
@@ -115,12 +154,31 @@ app.post(
 // get token or refresh
 app.get(
  '/auth/tok',
- { preValidation: fastifyPassport.authenticate("easy", {
-      failureRedirect: "/oops.html",
-			session: false
- })},
- async (request, reply, err, user, info, status) => {
-		if (err !== undefined) {
+ {
+  preValidation: fastifyPassport.authenticate("easy", {
+      //failureRedirect: "/oops.html",
+			session: false,
+      failureMessage: true, 
+      failWithError: true
+ },
+ ),
+  onError: function (req, rep, err, done) 
+  {
+    console.log('new err handler')
+    console.log(err)
+    console.log(req.cookies.token)
+
+    // When the process doesnt enters in the authentication.  Then a expired token. 
+    // Optimistic refreshing guarantee a previous valid token and a safe session  
+
+    if(err)
+      done(err);
+  }
+},
+ (request, reply, err) => {
+    console.log('callback pass')
+    console.log(err)
+		if (err !== undefined || request.authInfo === undefined) {
 			console.log('err')
 
 			console.warn(err)
@@ -130,10 +188,9 @@ app.get(
       .send(err);
 
       return;
-		/*} else if (user) {
-			console.log(user)*/
 		} else {
       console.log("Create Token")
+      console.log(request.authInfo)
 
       reply
       .setCookie('token', JSON.stringify(request.authInfo), {
@@ -148,6 +205,34 @@ app.get(
     }
   }
 )
+
+app.get(
+  '/auth',
+  { preValidation: fastifyPassport.authenticate("easy", {
+       failureRedirect: "/oops.html",
+       session: false
+  })},
+  (request, reply, err, user, info, status) => {
+     if (err !== undefined || request.authInfo === undefined) {
+       console.log('err')
+ 
+       console.warn(err)
+       
+       reply
+       .code(401)
+       .send(err);
+ 
+       return;
+     } else {
+       console.log("Valid Token")
+       
+       reply
+       .code(200)
+       .header('Content-Type', 'application/json; charset=utf-8')
+       .send({email:request.authInfo.email})
+     }
+   }
+ )
 
 const start = async () => {
     try {

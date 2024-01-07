@@ -41,7 +41,7 @@ class FlechoClient {
         });
     }
 
-    refresh(callback){
+    refresh(callback, fail){
 
         fetch(this.server + "/auth/tok", {
             method: "GET",
@@ -51,7 +51,25 @@ class FlechoClient {
             if (response.status == 200) {
                 return response.json();
             }else{
-                throw `error with status ${response.status}`;
+                fail(response.status)
+            }
+        })
+        .then((data) => {
+            callback(data);
+        });
+    }
+
+    validate(callback, fail){
+
+        fetch(this.server + "/auth", {
+            method: "GET",
+            credentials: 'include'
+        })
+        .then((response) => {
+            if (response.status == 200) {
+                return response.json();
+            }else{
+                fail(response.status)
             }
         })
         .then((data) => {

@@ -22,16 +22,37 @@ function gotoLogin(){
     location.href = "/login.html"
 }
 
-function verified(){
-    console.log('token refreshed')
+
+function verified(data){
+    if(data === undefined)
+        console.log('no auth data')
+    else
+        console.log('token refreshed/verified')
+}
+
+function onFail(code){
+    if(code == 401)
+    {
+        localStorage.removeItem('user');
+        gotoLogin();
+    }
+
+    console.log('error on token validation')
 }
 
 function refreshToken(){
     let client = new FlechoClient("http://localhost:5000", "example");
 
-    client.refresh(verified)
+    client.refresh(verified, onFail)
+}
+
+function validateToken(){
+    let client = new FlechoClient("http://localhost:5000", "example");
+
+    client.validate(verified, onFail)
 }
 
 window.onload = verifyLogin;
 window.gotoLogin = gotoLogin;
 window.refreshToken = refreshToken;
+window.validateToken = validateToken;
